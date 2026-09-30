@@ -14,8 +14,14 @@ def init_db():
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT UNIQUE,
-            password TEXT,
-            auth_code TEXT
+            password TEXT
+        )
+    """)
+    # QR Oturum Tablosu
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS sessions (
+            session_id TEXT PRIMARY KEY,
+            status TEXT
         )
     """)
     conn.commit()
@@ -23,22 +29,20 @@ def init_db():
 
 init_db()
 
-# HTML Arayüzleri (Tek dosya içinde modern şık tasarım)
 INDEX_HTML = """
 <!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Güvenli Kilit Paneli</title>
+    <title>Giriş Yap</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); height: 100vh; display: flex; justify-content: center; align-items: center; margin: 0; }
-        .card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 350px; text-align: center; }
-        h2 { color: #333; margin-bottom: 20px; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
-        button { background: #4f46e5; color: white; border: none; padding: 12px; width: 100%; border-radius: 6px; font-size: 16px; cursor: pointer; transition: background 0.3s; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: white; height: 100vh; display: flex; justify-content: center; align-items: center; margin: 0; }
+        .card { background: #1e293b; padding: 40px; border-radius: 12px; width: 320px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #334155; background: #0f172a; color: white; border-radius: 6px; box-sizing: border-box; }
+        button { background: #4f46e5; color: white; border: none; padding: 12px; width: 100%; border-radius: 6px; font-size: 16px; cursor: pointer; font-weight: bold; }
         button:hover { background: #4338ca; }
         .error { color: #ef4444; font-size: 13px; margin-top: 10px; }
-        .link { margin-top: 15px; display: block; color: #4f46e5; text-decoration: none; font-size: 14px; }
+        .link { margin-top: 15px; display: block; color: #38bdf8; text-decoration: none; font-size: 14px; }
     </style>
 </head>
 <body>
@@ -63,18 +67,17 @@ REGISTER_HTML = """
     <meta charset="UTF-8">
     <title>Kayıt Ol</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); height: 100vh; display: flex; justify-content: center; align-items: center; margin: 0; }
-        .card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 350px; text-align: center; }
-        h2 { color: #333; margin-bottom: 20px; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
-        button { background: #10b981; color: white; border: none; padding: 12px; width: 100%; border-radius: 6px; font-size: 16px; cursor: pointer; transition: background 0.3s; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: white; height: 100vh; display: flex; justify-content: center; align-items: center; margin: 0; }
+        .card { background: #1e293b; padding: 40px; border-radius: 12px; width: 320px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #334155; background: #0f172a; color: white; border-radius: 6px; box-sizing: border-box; }
+        button { background: #10b981; color: white; border: none; padding: 12px; width: 100%; border-radius: 6px; font-size: 16px; cursor: pointer; font-weight: bold; }
         button:hover { background: #059669; }
-        .link { margin-top: 15px; display: block; color: #4f46e5; text-decoration: none; font-size: 14px; }
+        .link { margin-top: 15px; display: block; color: #38bdf8; text-decoration: none; font-size: 14px; }
     </style>
 </head>
 <body>
     <div class="card">
-        <h2>Hesap Oluştur</h2>
+        <h2>Kayıt Ol</h2>
         <form method="POST">
             <input type="text" name="username" placeholder="Kullanıcı Adı" required>
             <input type="password" name="password" placeholder="Şifre" required>
@@ -86,31 +89,40 @@ REGISTER_HTML = """
 </html>
 """
 
-PANEL_HTML = """
+UNLOCK_PAGE_HTML = """
 <!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Mobil Kilit Kontrolü</title>
+    <title>PC Kilidini Aç</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: white; height: 100vh; display: flex; justify-content: center; align-items: center; margin: 0; }
-        .card { background: #1e293b; padding: 40px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); width: 320px; text-align: center; }
-        h2 { margin-bottom: 10px; color: #38bdf8; }
-        .code-box { background: #0f172a; border: 2px dashed #38bdf8; padding: 15px; font-size: 28px; font-weight: bold; letter-spacing: 5px; color: #f43f5e; margin: 20px 0; border-radius: 8px; }
-        button { background: #ef4444; color: white; border: none; padding: 12px; width: 100%; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: bold; transition: background 0.3s; }
-        button:hover { background: #dc2626; }
-        p { color: #94a3b8; font-size: 13px; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: white; height: 100vh; display: flex; justify-content: center; align-items: center; margin: 0; }
+        .card { background: #1e293b; padding: 40px; border-radius: 16px; width: 320px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+        h2 { color: #38bdf8; margin-bottom: 10px; }
+        p { color: #94a3b8; font-size: 14px; margin-bottom: 25px; }
+        button { background: #10b981; color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: bold; transition: background 0.3s; }
+        button:hover { background: #059669; }
     </style>
 </head>
 <body>
     <div class="card">
-        <h2>Mobil Kumanda</h2>
-        <p>Bilgisayarın kilidini açmak için aşağıdaki aktif kodu kullanabilir veya kilitle butonuna basabilirsin:</p>
-        <div class="code-box">{{ code }}</div>
-        <form action="/lock-pc" method="POST">
-            <button type="submit">Bilgisayarı Uzaktan Kilitle</button>
+        <h2>Bilgisayar Kilidi</h2>
+        <p>Aşağıdaki butona basarak bilgisayarınızın kilidini anında açabilirsiniz.</p>
+        <form method="POST">
+            <button type="submit">Kilidi Aç</button>
         </form>
     </div>
+</body>
+</html>
+"""
+
+SUCCESS_HTML = """
+<!DOCTYPE html>
+<html lang="tr">
+<head><meta charset="UTF-8"><title>Başarılı</title></head>
+<body style="background:#0f172a; color:white; font-family:sans-serif; text-align:center; padding-top:100px;">
+    <h1 style="color:#10b981;">Komut Gönderildi!</h1>
+    <p>Bilgisayarınızın kilidi açılıyor...</p>
 </body>
 </html>
 """
@@ -130,10 +142,9 @@ def login():
         
         if user:
             session["user"] = username
-            return redirect(url_for("panel"))
+            return redirect(url_for("dashboard"))
         else:
             error = "Hatalı kullanıcı adı veya şifre!"
-            
     return render_template_string(INDEX_HTML, error=error)
 
 @app.route("/register", methods=["GET", "POST"])
@@ -141,61 +152,56 @@ def register():
     if request.method == "POST":
         username = request.form["username"]
         password = request.form["password"]
-        initial_code = "".join(random.choices(string.digits, k=6))
-        
         try:
             conn = sqlite3.connect("database.db")
             cursor = conn.cursor()
-            cursor.execute("INSERT INTO users (username, password, auth_code) VALUES (?, ?, ?)", (username, password, initial_code))
+            cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
             conn.commit()
             conn.close()
             return redirect(url_for("login"))
         except:
             return "Bu kullanıcı adı zaten alınmış!"
-            
     return render_template_string(REGISTER_HTML)
 
-@app.route("/panel")
-def panel():
+@app.route("/dashboard")
+def dashboard():
     if "user" not in session:
         return redirect(url_for("login"))
+    return f"<body style='background:#0f172a; color:white; text-align:center; padding-top:100px; font-family:sans-serif;'><h1>Hoş geldin, {session['user']}!</h1><p>Bilgisayarını kilitlemek veya açmak için QR kodu okutman yeterlidir.</p></body>"
+
+# QR Okutulduğunda açılacak sayfa
+@app.route("/mobile-unlock", methods=["GET", "POST"])
+def mobile_unlock():
+    if "user" not in session:
+        return redirect(url_for("login", next=request.url))
     
-    username = session["user"]
+    session_id = request.args.get("session")
+    if not session_id:
+        return "Geçersiz oturum!"
+        
+    if request.method == "POST":
+        conn = sqlite3.connect("database.db")
+        cursor = conn.cursor()
+        cursor.execute("REPLACE INTO sessions (session_id, status) VALUES (?, ?)", (session_id, "approved"))
+        conn.commit()
+        conn.close()
+        return render_template_string(SUCCESS_HTML)
+        
+    return render_template_string(UNLOCK_PAGE_HTML)
+
+# Bilgisayarın onay durumunu kontrol ettiği API
+@app.route("/api/check-status", methods=["GET"])
+def check_status():
+    session_id = request.args.get("session")
     conn = sqlite3.connect("database.db")
     cursor = conn.cursor()
-    cursor.execute("SELECT auth_code FROM users WHERE username = ?", (username,))
+    cursor.execute("SELECT status FROM sessions WHERE session_id = ?", (session_id,))
     row = cursor.fetchone()
     conn.close()
     
-    return render_template_string(PANEL_HTML, code=row[0] if row else "000000")
-
-@app.route("/lock-pc", methods=["POST"])
-def lock_pc():
-    # Bilgisayar tarafındaki script bu endpoint'i kontrol edip kilitlenebilir
-    return "Komut gönderildi."
-
-# Bilgisayarın kilidi açmak için sorguladığı API
-@app.route("/api/verify", methods=["POST"])
-def verify():
-    data = request.json
-    username = data.get("username")
-    code = data.get("code")
-    
-    conn = sqlite3.connect("database.db")
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE username = ? AND auth_code = ?", (username, code))
-    user = cursor.fetchone()
-    
-    if user:
-        # Kod kullanıldıktan sonra güvenlik için hemen yeni bir kod üretelim
-        new_code = "".join(random.choices(string.digits, k=6))
-        cursor.execute("UPDATE users SET auth_code = ? WHERE username = ?", (new_code, username))
-        conn.commit()
-        conn.close()
-        return jsonify({"status": "success"})
-    
-    conn.close()
-    return jsonify({"status": "error"})
+    if row and row[0] == "approved":
+        return jsonify({"status": "unlocked"})
+    return jsonify({"status": "waiting"})
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
